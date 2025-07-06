@@ -30,4 +30,17 @@ public class Point {
         this.point += amount;
         this.updateMillis = System.currentTimeMillis();
     }
+
+    public void use(long amount) {
+        if(amount <= 0) {
+            throw new IllegalArgumentException("사용하는 포인트는 0보다 커야됩니다.");
+        }
+
+        if(amount > point) {
+            throw new IllegalArgumentException("사용 포인트가 현재 보유중인 포인트보다 많습니다.");
+        }
+
+        this.point -= amount;
+        this.updateMillis = System.currentTimeMillis();
+    }
 }
