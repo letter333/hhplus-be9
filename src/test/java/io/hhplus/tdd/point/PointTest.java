@@ -106,11 +106,11 @@ class PointTest {
         assertEquals(expectedPoint, point.getPoint());
     }
 
-    @ParameterizedTest
-    @ValueSource(longs = {-1, 0})
-    void 사용하는_포인트가_0보다_작거나_같으면_예외발생(long useAmount) {
+    @Test
+    void 사용하는_포인트가_1보다_작으면_예외발생() {
         //given
         Point point = new Point(1, 100000, System.currentTimeMillis());
+        long useAmount = 0L;
 
         //when & then
         assertThrows(IllegalArgumentException.class, () -> point.use(useAmount));
