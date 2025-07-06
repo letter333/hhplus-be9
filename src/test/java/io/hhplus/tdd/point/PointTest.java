@@ -92,4 +92,97 @@ class PointTest {
         assertTrue(point.getUpdateMillis() > initialTime);
     }
 
+    @Test
+    void 포인트를_사용하면_포인트가_감소해야_한다() {
+        //given
+        Point point = new Point(1, 100000, System.currentTimeMillis());
+        long useAmount = 1000L;
+        long expectedPoint = point.getPoint() - useAmount;
+
+        //when
+        point.use(useAmount);
+
+        //then
+        assertEquals(expectedPoint, point.getPoint());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {-1, 0})
+    void 사용하는_포인트가_0보다_작거나_같으면_예외발생(long useAmount) {
+        //given
+        Point point = new Point(1, 100000, System.currentTimeMillis());
+
+        //when & then
+        assertThrows(IllegalArgumentException.class, () -> point.use(useAmount));
+    }
+
+    @Test
+    void 사용하는_포인트가_가진_포인트보다_많으면_예외발생() {
+        //given
+        Point point = new Point(1, 100000, System.currentTimeMillis());
+        long useAmount = 100001L;
+
+        //when & then
+        assertThrows(IllegalArgumentException.class, () -> point.use(useAmount));
+    }
+
+    @Test
+    void 연속으로_포인트를_사용하면_계속_감소해야_한다() {
+        //given
+        Point point = new Point(1, 100000, System.currentTimeMillis());
+        long useAmount1 = 1000L;
+        long useAmount2 = 1000L;
+        long useAmount3 = 1000L;
+        long expectedPoint = point.getPoint() - useAmount1 - useAmount2 - useAmount3;
+
+        //when
+        point.use(useAmount1);
+        point.use(useAmount2);
+        point.use(useAmount3);
+
+        //then
+        assertEquals(expectedPoint, point.getPoint());
+    }
+
+    @Test
+    void 연속_사용_후_포인트가_부족하면_예외발생() {
+        //given
+        Point point = new Point(1, 100000, System.currentTimeMillis());
+
+        //when
+        point.use(50000L);
+        point.use(40000L);
+
+        //then
+        assertThrows(IllegalArgumentException.class, () -> point.use(20000L));
+    }
+
+
+    @Test
+    void 사용_후_포인트가_정확히_0이면_성공() {
+        //given
+        Point point = new Point(1, 100000, System.currentTimeMillis());
+        long useAmount = 100000L;
+
+        //when
+        point.use(useAmount);
+
+        //then
+        assertEquals(0L, point.getPoint());
+    }
+
+    @Test
+    void 사용_후_업데이트_시간이_갱신되어야_한다() throws InterruptedException {
+        //given
+        long initialTime = System.currentTimeMillis();
+        Point point = new Point(1, 10000, initialTime);
+        long useAmount = 1000L;
+
+        //when
+        Thread.sleep(100); //시간 업데이트를 위해 100만큼 슬립
+        point.use(useAmount);
+
+        //then
+        assertTrue(point.getUpdateMillis() > initialTime);
+    }
 }
