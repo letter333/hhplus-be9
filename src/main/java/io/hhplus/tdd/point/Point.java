@@ -1,5 +1,7 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.point.policy.DefaultPointPolicy;
+import io.hhplus.tdd.point.policy.PointPolicy;
 import lombok.Getter;
 
 @Getter
@@ -7,38 +9,24 @@ public class Point {
     private long id;
     private long point;
     private long updateMillis;
+    private final PointPolicy pointPolicy;
 
     public Point(long id, long point, long updateMillis) {
         this.id = id;
         this.point = point;
         this.updateMillis = updateMillis;
+        this.pointPolicy = new DefaultPointPolicy();
     }
 
     public void charge(long amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("충전하는 포인트는 0보다 커야됩니다.");
-        }
-        
-        if (amount > 100000) {
-            throw new IllegalArgumentException("충전하는 포인트는 100000을 초과할 수 없습니다.");
-        }
-
-        if(point + amount > 1000000) {
-            throw new IllegalArgumentException("충전 후 포인트는 1000000을 초과할 수 없습니다..");
-        }
+        pointPolicy.validateCharge(point, amount);
 
         this.point += amount;
         this.updateMillis = System.currentTimeMillis();
     }
 
     public void use(long amount) {
-        if(amount <= 0) {
-            throw new IllegalArgumentException("사용하는 포인트는 0보다 커야됩니다.");
-        }
-
-        if(amount > point) {
-            throw new IllegalArgumentException("사용 포인트가 현재 보유중인 포인트보다 많습니다.");
-        }
+        pointPolicy.validateUse(point, amount);
 
         this.point -= amount;
         this.updateMillis = System.currentTimeMillis();
