@@ -2,8 +2,7 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
-import io.hhplus.tdd.point.dto.ChargePointRequestDto;
-import org.junit.jupiter.api.BeforeEach;
+import io.hhplus.tdd.point.dto.PointAmountRequestDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -57,7 +56,7 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 100000L;
-        ChargePointRequestDto dto = new ChargePointRequestDto(id, amount);
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = UserPoint.empty(id);
         UserPoint expectedUserPoint = new UserPoint(id, existingUserPoint.point() + amount, System.currentTimeMillis());
 
@@ -79,7 +78,7 @@ class PointServiceTest {
     @Test
     void 충전_요청_정보가_null_이면_예외발생() {
         //given
-        ChargePointRequestDto dto = null;
+        PointAmountRequestDto dto = null;
 
         //when & then
         assertThrows(IllegalArgumentException.class, () -> {
@@ -95,7 +94,7 @@ class PointServiceTest {
     void 사용자가_존재하지_않으면_예외발생() {
         //given
         long id = 999L;
-        ChargePointRequestDto dto = new ChargePointRequestDto(id, 100000L);
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, 100000L);
         when(userPointTable.selectById(id)).thenReturn(null);
 
         //when & then
@@ -113,7 +112,7 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = -1000L;
-        ChargePointRequestDto dto = new ChargePointRequestDto(id, amount);
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = UserPoint.empty(id);
         when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
 
@@ -132,7 +131,7 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 100001L;
-        ChargePointRequestDto dto = new ChargePointRequestDto(id, amount);
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = UserPoint.empty(id);
         when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
 
@@ -151,7 +150,7 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 1000001L;
-        ChargePointRequestDto dto = new ChargePointRequestDto(id, amount);
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = UserPoint.empty(id);
 
         when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
