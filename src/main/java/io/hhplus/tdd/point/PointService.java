@@ -2,7 +2,7 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
-import io.hhplus.tdd.point.dto.ChargePointRequestDto;
+import io.hhplus.tdd.point.dto.PointAmountRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +16,7 @@ public class PointService {
         return userPointTable.selectById(id);
     }
 
-    public UserPoint charge(ChargePointRequestDto dto) {
+    public UserPoint charge(PointAmountRequestDto dto) {
         if(dto == null) {
             throw new IllegalArgumentException("충전 요청 정보가 필요합니다.");
         }
