@@ -31,4 +31,12 @@ public class Point {
         this.point -= amount;
         this.updateMillis = System.currentTimeMillis();
     }
+
+    public static Point toPoint(UserPoint userPoint) {
+        return new Point(userPoint.id(), userPoint.point(), userPoint.updateMillis());
+    }
+
+    public UserPoint toUserPoint() {
+        return new UserPoint(id, point, updateMillis);
+    }
 }
