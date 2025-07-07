@@ -2,6 +2,7 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.point.dto.ChargePointRequestDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,5 +50,119 @@ class PointServiceTest {
         //then
         assertNull(userPoint);
         verify(userPointTable, times(1)).selectById(id);
+    }
+
+    @Test
+    void 포인트_충전_성공() {
+        //given
+        long id = 1L;
+        long amount = 100000L;
+        ChargePointRequestDto dto = new ChargePointRequestDto(id, amount);
+        UserPoint existingUserPoint = UserPoint.empty(id);
+        UserPoint expectedUserPoint = new UserPoint(id, existingUserPoint.point() + amount, System.currentTimeMillis());
+
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+        when(userPointTable.insertOrUpdate(anyLong(), anyLong())).thenReturn(expectedUserPoint);
+
+        //when
+        UserPoint chargedUserPoint = pointService.charge(dto);
+
+        //then
+        assertNotNull(chargedUserPoint);
+        assertEquals(id, chargedUserPoint.id());
+        assertEquals(expectedUserPoint.point(), chargedUserPoint.point());
+        verify(userPointTable, times(1)).selectById(id);
+        verify(userPointTable, times(1)).insertOrUpdate(id, chargedUserPoint.point());
+        verify(pointHistoryTable, times(1)).insert(eq(id), eq(amount), eq(TransactionType.CHARGE), anyLong());
+    }
+
+    @Test
+    void 충전_요청_정보가_null_이면_예외발생() {
+        //given
+        ChargePointRequestDto dto = null;
+
+        //when & then
+        assertThrows(IllegalArgumentException.class, () -> {
+            pointService.charge(dto);
+        });
+
+        verify(userPointTable, never()).selectById(anyLong());
+        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
+        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
+    }
+
+    @Test
+    void 사용자가_존재하지_않으면_예외발생() {
+        //given
+        long id = 999L;
+        ChargePointRequestDto dto = new ChargePointRequestDto(id, 100000L);
+        when(userPointTable.selectById(id)).thenReturn(null);
+
+        //when & then
+        assertThrows(IllegalArgumentException.class, () -> {
+            pointService.charge(dto);
+        });
+
+        verify(userPointTable, times(1)).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
+        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
+    }
+
+    @Test
+    void 유효하지_않은_포인트_충전_시_예외발생() {
+        //given
+        long id = 1L;
+        long amount = -1000L;
+        ChargePointRequestDto dto = new ChargePointRequestDto(id, amount);
+        UserPoint existingUserPoint = UserPoint.empty(id);
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+
+        //when & then
+        assertThrows(IllegalArgumentException.class, () -> {
+            pointService.charge(dto);
+        });
+
+        verify(userPointTable, times(1)).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
+        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
+    }
+
+    @Test
+    void 최대_충전_포인트를_초과하면_예외발생() {
+        //given
+        long id = 1L;
+        long amount = 100001L;
+        ChargePointRequestDto dto = new ChargePointRequestDto(id, amount);
+        UserPoint existingUserPoint = UserPoint.empty(id);
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+
+        //when & then
+        assertThrows(IllegalArgumentException.class, () -> {
+            pointService.charge(dto);
+        });
+
+        verify(userPointTable, times(1)).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
+        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
+    }
+
+    @Test
+    void 충전_후_포인트가_최대값을_초과하면_예외발생() {
+        //given
+        long id = 1L;
+        long amount = 1000001L;
+        ChargePointRequestDto dto = new ChargePointRequestDto(id, amount);
+        UserPoint existingUserPoint = UserPoint.empty(id);
+
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+
+        //when & then
+        assertThrows(IllegalArgumentException.class, () -> {
+            pointService.charge(dto);
+        });
+
+        verify(userPointTable, times(1)).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
+        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
     }
 }
