@@ -293,4 +293,37 @@ class PointServiceTest {
         verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
         verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
     }
+
+    @Test
+    void 포인트_사용_성공_후_히스토리_정상_저장() {
+        //given
+        long id = 1L;
+        long amount = 30000L;
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
+        UserPoint existingUserPoint = new UserPoint(id, 100000L, System.currentTimeMillis());
+        UserPoint expectedUserPoint = new UserPoint(id, existingUserPoint.point() - amount, System.currentTimeMillis());
+
+        long currentTime = System.currentTimeMillis();
+        PointHistory expectedHistory = new PointHistory(1L, id, amount, TransactionType.USE, currentTime);
+
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+        when(userPointTable.insertOrUpdate(anyLong(), anyLong())).thenReturn(expectedUserPoint);
+        when(pointHistoryTable.insert(eq(id), eq(amount), eq(TransactionType.USE), anyLong()))
+                .thenReturn(expectedHistory);
+
+        //when
+        UserPoint usedUserPoint = pointService.use(dto);
+
+        //then
+        assertNotNull(usedUserPoint);
+        assertEquals(id, usedUserPoint.id());
+        assertEquals(expectedUserPoint.point(), usedUserPoint.point());
+
+        verify(pointHistoryTable, times(1)).insert(
+                eq(id),
+                eq(amount),
+                eq(TransactionType.USE),
+                anyLong()
+        );
+    }
 }
