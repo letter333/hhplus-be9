@@ -9,6 +9,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -163,6 +165,39 @@ class PointServiceTest {
         verify(userPointTable, times(1)).selectById(id);
         verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
         verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
+    }
+
+    @Test
+    void 포인트_충전_성공_후_히스토리_저장() {
+        //given
+        long id = 1L;
+        long amount = 50000L;
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
+        UserPoint existingUserPoint = UserPoint.empty(id);
+        UserPoint expectedUserPoint = new UserPoint(id, existingUserPoint.point() + amount, System.currentTimeMillis());
+
+        long currentTime = System.currentTimeMillis();
+        PointHistory expectedHistory = new PointHistory(1L, id, amount, TransactionType.CHARGE, currentTime);
+
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+        when(userPointTable.insertOrUpdate(anyLong(), anyLong())).thenReturn(expectedUserPoint);
+        when(pointHistoryTable.insert(eq(id), eq(amount), eq(TransactionType.CHARGE), anyLong()))
+                .thenReturn(expectedHistory);
+
+        //when
+        UserPoint chargedUserPoint = pointService.charge(dto);
+
+        //then
+        assertNotNull(chargedUserPoint);
+        assertEquals(id, chargedUserPoint.id());
+        assertEquals(expectedUserPoint.point(), chargedUserPoint.point());
+
+        verify(pointHistoryTable, times(1)).insert(
+                eq(id),
+                eq(amount),
+                eq(TransactionType.CHARGE),
+                anyLong()
+        );
     }
 
     @Test
