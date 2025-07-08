@@ -36,4 +36,25 @@ public class PointService {
 
         return chargedUserPoint;
     }
+
+    public UserPoint use(PointAmountRequestDto dto) {
+        if(dto == null) {
+            throw new IllegalArgumentException("사용 요청 정보가 필요합니다.");
+        }
+
+        UserPoint userPoint = getPoint(dto.id());
+
+        if(userPoint == null) {
+            throw new IllegalArgumentException("사용자 정보가 존재하지 않습니다.");
+        }
+
+        Point point = Point.toPoint(userPoint);
+
+        point.use(dto.amount());
+
+        UserPoint usedUserPoint = userPointTable.insertOrUpdate(userPoint.id(), point.getPoint());
+        pointHistoryTable.insert(usedUserPoint.id(), dto.amount(), TransactionType.USE, System.currentTimeMillis());
+
+        return usedUserPoint;
+    }
 }
