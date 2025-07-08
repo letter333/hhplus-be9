@@ -295,7 +295,7 @@ class PointServiceTest {
     }
 
     @Test
-    void 포인트_사용_성공_후_히스토리_정상_저장() {
+    void 포인트_사용_성공_후_히스토리_저장() {
         //given
         long id = 1L;
         long amount = 30000L;
@@ -325,5 +325,114 @@ class PointServiceTest {
                 eq(TransactionType.USE),
                 anyLong()
         );
+    }
+
+    @Test
+    void 포인트_히스토리_조회_성공() {
+        //given
+        long id = 1L;
+        List<PointHistory> expectedHistories = List.of(
+                new PointHistory(1L, id, 1000L, TransactionType.CHARGE, System.currentTimeMillis()),
+                new PointHistory(2L, id, 500L, TransactionType.USE, System.currentTimeMillis())
+        );
+        when(pointHistoryTable.selectAllByUserId(id)).thenReturn(expectedHistories);
+
+        //when
+        List<PointHistory> histories = pointService.getPointHistory(id);
+
+        //then
+        assertNotNull(histories);
+        assertEquals(2, histories.size());
+        assertEquals(expectedHistories, histories);
+        verify(pointHistoryTable, times(1)).selectAllByUserId(id);
+    }
+
+    @Test
+    void 포인트_충전_후_히스토리_조회_확인() {
+        //given
+        long id = 1L;
+        long amount = 30000L;
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
+        UserPoint existingUserPoint = UserPoint.empty(id);
+        UserPoint chargedUserPoint = new UserPoint(id, amount, System.currentTimeMillis());
+
+        long currentTime = System.currentTimeMillis();
+        PointHistory chargeHistory = new PointHistory(1L, id, amount, TransactionType.CHARGE, currentTime);
+        List<PointHistory> expectedHistories = List.of(chargeHistory);
+
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+        when(userPointTable.insertOrUpdate(anyLong(), anyLong())).thenReturn(chargedUserPoint);
+        when(pointHistoryTable.insert(eq(id), eq(amount), eq(TransactionType.CHARGE), anyLong()))
+                .thenReturn(chargeHistory);
+        when(pointHistoryTable.selectAllByUserId(id)).thenReturn(expectedHistories);
+
+        //when
+        pointService.charge(dto);
+        List<PointHistory> histories = pointService.getPointHistory(id);
+
+        //then
+        assertNotNull(histories);
+        assertEquals(1, histories.size());
+
+        PointHistory savedHistory = histories.get(0);
+        assertEquals(id, savedHistory.userId());
+        assertEquals(amount, savedHistory.amount());
+        assertEquals(TransactionType.CHARGE, savedHistory.type());
+        assertTrue(savedHistory.updateMillis() > 0);
+
+        verify(pointHistoryTable, times(1)).insert(eq(id), eq(amount), eq(TransactionType.CHARGE), anyLong());
+        verify(pointHistoryTable, times(1)).selectAllByUserId(id);
+    }
+
+    @Test
+    void 히스토리가_없으면_빈_리스트_반환() {
+        //given
+        long id = 1L;
+        when(pointHistoryTable.selectAllByUserId(id)).thenReturn(List.of());
+
+        //when
+        List<PointHistory> histories = pointService.getPointHistory(id);
+
+        //then
+        assertNotNull(histories);
+        assertTrue(histories.isEmpty());
+        verify(pointHistoryTable, times(1)).selectAllByUserId(id);
+    }
+
+    @Test
+    void 포인트_사용_후_히스토리_조회_확인() {
+        //given
+        long id = 1L;
+        long amount = 25000L;
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
+        UserPoint existingUserPoint = new UserPoint(id, 100000L, System.currentTimeMillis());
+        UserPoint usedUserPoint = new UserPoint(id, 75000L, System.currentTimeMillis());
+
+        long currentTime = System.currentTimeMillis();
+        PointHistory useHistory = new PointHistory(1L, id, amount, TransactionType.USE, currentTime);
+        List<PointHistory> expectedHistories = List.of(useHistory);
+
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+        when(userPointTable.insertOrUpdate(anyLong(), anyLong())).thenReturn(usedUserPoint);
+        when(pointHistoryTable.insert(eq(id), eq(amount), eq(TransactionType.USE), anyLong()))
+                .thenReturn(useHistory);
+        when(pointHistoryTable.selectAllByUserId(id)).thenReturn(expectedHistories);
+
+        //when
+        pointService.use(dto);
+        List<PointHistory> histories = pointService.getPointHistory(id);
+
+        //then
+        assertNotNull(histories);
+        assertEquals(1, histories.size());
+
+        PointHistory savedHistory = histories.get(0);
+        assertEquals(id, savedHistory.userId());
+        assertEquals(amount, savedHistory.amount());
+        assertEquals(TransactionType.USE, savedHistory.type());
+        assertTrue(savedHistory.updateMillis() > 0);
+
+        verify(pointHistoryTable, times(1)).insert(eq(id), eq(amount), eq(TransactionType.USE), anyLong());
+        verify(pointHistoryTable, times(1)).selectAllByUserId(id);
     }
 }
