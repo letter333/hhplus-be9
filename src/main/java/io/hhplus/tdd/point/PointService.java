@@ -6,6 +6,8 @@ import io.hhplus.tdd.point.dto.PointAmountRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PointService {
@@ -56,5 +58,9 @@ public class PointService {
         pointHistoryTable.insert(usedUserPoint.id(), dto.amount(), TransactionType.USE, System.currentTimeMillis());
 
         return usedUserPoint;
+    }
+
+    public List<PointHistory> getPointHistory(long userId) {
+        return pointHistoryTable.selectAllByUserId(userId);
     }
 }
