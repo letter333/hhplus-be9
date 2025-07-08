@@ -164,4 +164,98 @@ class PointServiceTest {
         verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
         verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
     }
+
+    @Test
+    void 포인트_사용_성공() {
+        //given
+        long id = 1L;
+        long amount = 1000L;
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
+        UserPoint existingUserPoint = new UserPoint(id, 100000L, System.currentTimeMillis());
+        UserPoint expectedUserPoint = new UserPoint(id, existingUserPoint.point() - amount, System.currentTimeMillis());
+
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+        when(userPointTable.insertOrUpdate(anyLong(), anyLong())).thenReturn(expectedUserPoint);
+
+        //when
+        UserPoint usedUserPoint = pointService.use(dto);
+
+        //then
+        assertNotNull(usedUserPoint);
+        assertEquals(id, usedUserPoint.id());
+        assertEquals(expectedUserPoint.point(), usedUserPoint.point());
+        verify(userPointTable, times(1)).selectById(id);
+        verify(userPointTable, times(1)).insertOrUpdate(id, usedUserPoint.point());
+        verify(pointHistoryTable, times(1)).insert(eq(id), eq(amount), eq(TransactionType.USE), anyLong());
+    }
+
+    @Test
+    void 사용_요청_정보가_null_이면_예외발생() {
+        //given
+        PointAmountRequestDto dto = null;
+
+        //when & then
+        assertThrows(IllegalArgumentException.class, () -> {
+            pointService.use(dto);
+        });
+
+        verify(userPointTable, never()).selectById(anyLong());
+        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
+        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
+    }
+
+    @Test
+    void 사용_시_사용자가_존재하지_않으면_예외발생() {
+        //given
+        long id = 999L;
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, 50000L);
+        when(userPointTable.selectById(id)).thenReturn(null);
+
+        //when & then
+        assertThrows(IllegalArgumentException.class, () -> {
+            pointService.use(dto);
+        });
+
+        verify(userPointTable, times(1)).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
+        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
+    }
+
+    @Test
+    void 사용하는_포인트가_1보다_작으면_예외발생() {
+        //given
+        long id = 1L;
+        long amount = 0L;
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
+        UserPoint existingUserPoint = new UserPoint(id, 100000L, System.currentTimeMillis());
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+
+        //when & then
+        assertThrows(IllegalArgumentException.class, () -> {
+            pointService.use(dto);
+        });
+
+        verify(userPointTable, times(1)).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
+        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
+    }
+
+    @Test
+    void 사용하는_포인트가_현재_포인트보다_많으면_예외발생() {
+        //given
+        long id = 1L;
+        long amount = 100001L;
+        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
+        UserPoint existingUserPoint = new UserPoint(id, 100000L, System.currentTimeMillis());
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+
+        //when & then
+        assertThrows(IllegalArgumentException.class, () -> {
+            pointService.use(dto);
+        });
+
+        verify(userPointTable, times(1)).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
+        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
+    }
 }
