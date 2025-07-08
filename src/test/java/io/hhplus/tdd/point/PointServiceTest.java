@@ -2,7 +2,6 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
-import io.hhplus.tdd.point.dto.PointAmountRequestDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -58,7 +57,6 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 100000L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = UserPoint.empty(id);
         UserPoint expectedUserPoint = new UserPoint(id, existingUserPoint.point() + amount, System.currentTimeMillis());
 
@@ -66,7 +64,7 @@ class PointServiceTest {
         when(userPointTable.insertOrUpdate(anyLong(), anyLong())).thenReturn(expectedUserPoint);
 
         //when
-        UserPoint chargedUserPoint = pointService.charge(dto);
+        UserPoint chargedUserPoint = pointService.charge(id, amount);
 
         //then
         assertNotNull(chargedUserPoint);
@@ -78,30 +76,15 @@ class PointServiceTest {
     }
 
     @Test
-    void 충전_요청_정보가_null_이면_예외발생() {
-        //given
-        PointAmountRequestDto dto = null;
-
-        //when & then
-        assertThrows(IllegalArgumentException.class, () -> {
-            pointService.charge(dto);
-        });
-
-        verify(userPointTable, never()).selectById(anyLong());
-        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
-        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
-    }
-
-    @Test
     void 사용자가_존재하지_않으면_예외발생() {
         //given
         long id = 999L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, 100000L);
+        long amount = 100000L;
         when(userPointTable.selectById(id)).thenReturn(null);
 
         //when & then
         assertThrows(IllegalArgumentException.class, () -> {
-            pointService.charge(dto);
+            pointService.charge(id, amount);
         });
 
         verify(userPointTable, times(1)).selectById(id);
@@ -114,13 +97,12 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = -1000L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = UserPoint.empty(id);
         when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
 
         //when & then
         assertThrows(IllegalArgumentException.class, () -> {
-            pointService.charge(dto);
+            pointService.charge(id, amount);
         });
 
         verify(userPointTable, times(1)).selectById(id);
@@ -133,13 +115,12 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 100001L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = UserPoint.empty(id);
         when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
 
         //when & then
         assertThrows(IllegalArgumentException.class, () -> {
-            pointService.charge(dto);
+            pointService.charge(id, amount);
         });
 
         verify(userPointTable, times(1)).selectById(id);
@@ -152,14 +133,13 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 1000001L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = UserPoint.empty(id);
 
         when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
 
         //when & then
         assertThrows(IllegalArgumentException.class, () -> {
-            pointService.charge(dto);
+            pointService.charge(id, amount);
         });
 
         verify(userPointTable, times(1)).selectById(id);
@@ -172,7 +152,6 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 50000L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = UserPoint.empty(id);
         UserPoint expectedUserPoint = new UserPoint(id, existingUserPoint.point() + amount, System.currentTimeMillis());
 
@@ -185,7 +164,7 @@ class PointServiceTest {
                 .thenReturn(expectedHistory);
 
         //when
-        UserPoint chargedUserPoint = pointService.charge(dto);
+        UserPoint chargedUserPoint = pointService.charge(id, amount);
 
         //then
         assertNotNull(chargedUserPoint);
@@ -205,7 +184,6 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 1000L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = new UserPoint(id, 100000L, System.currentTimeMillis());
         UserPoint expectedUserPoint = new UserPoint(id, existingUserPoint.point() - amount, System.currentTimeMillis());
 
@@ -213,7 +191,7 @@ class PointServiceTest {
         when(userPointTable.insertOrUpdate(anyLong(), anyLong())).thenReturn(expectedUserPoint);
 
         //when
-        UserPoint usedUserPoint = pointService.use(dto);
+        UserPoint usedUserPoint = pointService.use(id, amount);
 
         //then
         assertNotNull(usedUserPoint);
@@ -225,30 +203,15 @@ class PointServiceTest {
     }
 
     @Test
-    void 사용_요청_정보가_null_이면_예외발생() {
-        //given
-        PointAmountRequestDto dto = null;
-
-        //when & then
-        assertThrows(IllegalArgumentException.class, () -> {
-            pointService.use(dto);
-        });
-
-        verify(userPointTable, never()).selectById(anyLong());
-        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
-        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
-    }
-
-    @Test
     void 사용_시_사용자가_존재하지_않으면_예외발생() {
         //given
         long id = 999L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, 50000L);
+        long amount = 50000L;
         when(userPointTable.selectById(id)).thenReturn(null);
 
         //when & then
         assertThrows(IllegalArgumentException.class, () -> {
-            pointService.use(dto);
+            pointService.use(id, amount);
         });
 
         verify(userPointTable, times(1)).selectById(id);
@@ -261,13 +224,12 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 0L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = new UserPoint(id, 100000L, System.currentTimeMillis());
         when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
 
         //when & then
         assertThrows(IllegalArgumentException.class, () -> {
-            pointService.use(dto);
+            pointService.use(id, amount);
         });
 
         verify(userPointTable, times(1)).selectById(id);
@@ -280,13 +242,12 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 100001L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = new UserPoint(id, 100000L, System.currentTimeMillis());
         when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
 
         //when & then
         assertThrows(IllegalArgumentException.class, () -> {
-            pointService.use(dto);
+            pointService.use(id, amount);
         });
 
         verify(userPointTable, times(1)).selectById(id);
@@ -299,7 +260,6 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 30000L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = new UserPoint(id, 100000L, System.currentTimeMillis());
         UserPoint expectedUserPoint = new UserPoint(id, existingUserPoint.point() - amount, System.currentTimeMillis());
 
@@ -312,7 +272,7 @@ class PointServiceTest {
                 .thenReturn(expectedHistory);
 
         //when
-        UserPoint usedUserPoint = pointService.use(dto);
+        UserPoint usedUserPoint = pointService.use(id, amount);
 
         //then
         assertNotNull(usedUserPoint);
@@ -352,7 +312,6 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 30000L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = UserPoint.empty(id);
         UserPoint chargedUserPoint = new UserPoint(id, amount, System.currentTimeMillis());
 
@@ -367,7 +326,7 @@ class PointServiceTest {
         when(pointHistoryTable.selectAllByUserId(id)).thenReturn(expectedHistories);
 
         //when
-        pointService.charge(dto);
+        pointService.charge(id, amount);
         List<PointHistory> histories = pointService.getPointHistory(id);
 
         //then
@@ -404,7 +363,6 @@ class PointServiceTest {
         //given
         long id = 1L;
         long amount = 25000L;
-        PointAmountRequestDto dto = new PointAmountRequestDto(id, amount);
         UserPoint existingUserPoint = new UserPoint(id, 100000L, System.currentTimeMillis());
         UserPoint usedUserPoint = new UserPoint(id, 75000L, System.currentTimeMillis());
 
@@ -419,7 +377,7 @@ class PointServiceTest {
         when(pointHistoryTable.selectAllByUserId(id)).thenReturn(expectedHistories);
 
         //when
-        pointService.use(dto);
+        pointService.use(id, amount);
         List<PointHistory> histories = pointService.getPointHistory(id);
 
         //then
