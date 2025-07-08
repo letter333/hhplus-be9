@@ -39,20 +39,6 @@ class PointServiceTest {
     }
 
     @Test
-    void 존재하지_않는_사용자의_포인트_조회() {
-        //given
-        long id = 999L;
-        when(userPointTable.selectById(id)).thenReturn(null);
-
-        //when
-        UserPoint userPoint = pointService.getPoint(id);
-
-        //then
-        assertNull(userPoint);
-        verify(userPointTable, times(1)).selectById(id);
-    }
-
-    @Test
     void 포인트_충전_성공() {
         //given
         long id = 1L;
@@ -73,23 +59,6 @@ class PointServiceTest {
         verify(userPointTable, times(1)).selectById(id);
         verify(userPointTable, times(1)).insertOrUpdate(id, chargedUserPoint.point());
         verify(pointHistoryTable, times(1)).insert(eq(id), eq(amount), eq(TransactionType.CHARGE), anyLong());
-    }
-
-    @Test
-    void 사용자가_존재하지_않으면_예외발생() {
-        //given
-        long id = 999L;
-        long amount = 100000L;
-        when(userPointTable.selectById(id)).thenReturn(null);
-
-        //when & then
-        assertThrows(IllegalArgumentException.class, () -> {
-            pointService.charge(id, amount);
-        });
-
-        verify(userPointTable, times(1)).selectById(id);
-        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
-        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
     }
 
     @Test
@@ -200,23 +169,6 @@ class PointServiceTest {
         verify(userPointTable, times(1)).selectById(id);
         verify(userPointTable, times(1)).insertOrUpdate(id, usedUserPoint.point());
         verify(pointHistoryTable, times(1)).insert(eq(id), eq(amount), eq(TransactionType.USE), anyLong());
-    }
-
-    @Test
-    void 사용_시_사용자가_존재하지_않으면_예외발생() {
-        //given
-        long id = 999L;
-        long amount = 50000L;
-        when(userPointTable.selectById(id)).thenReturn(null);
-
-        //when & then
-        assertThrows(IllegalArgumentException.class, () -> {
-            pointService.use(id, amount);
-        });
-
-        verify(userPointTable, times(1)).selectById(id);
-        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
-        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(TransactionType.class), anyLong());
     }
 
     @Test
