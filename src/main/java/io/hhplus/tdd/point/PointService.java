@@ -18,7 +18,7 @@ public class PointService {
     }
 
     public UserPoint charge(long id, long amount) {
-        UserPoint userPoint = getPoint(id);
+        UserPoint userPoint = userPointTable.selectById(id);
         Point point = Point.toPoint(userPoint);
 
         point.charge(amount);
@@ -30,7 +30,7 @@ public class PointService {
     }
 
     public UserPoint use(long id, long amount) {
-        UserPoint userPoint = getPoint(id);
+        UserPoint userPoint = userPointTable.selectById(id);
         Point point = Point.toPoint(userPoint);
 
         point.use(amount);
