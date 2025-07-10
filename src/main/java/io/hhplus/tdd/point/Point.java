@@ -11,11 +11,11 @@ public class Point {
     private long updateMillis;
     private final PointPolicy pointPolicy;
 
-    public Point(long id, long point, long updateMillis) {
+    public Point(long id, long point, long updateMillis, PointPolicy pointPolicy) {
         this.id = id;
         this.point = point;
         this.updateMillis = updateMillis;
-        this.pointPolicy = new DefaultPointPolicy();
+        this.pointPolicy = pointPolicy;
     }
 
     public void charge(long amount) {
@@ -32,8 +32,8 @@ public class Point {
         this.updateMillis = System.currentTimeMillis();
     }
 
-    public static Point toPoint(UserPoint userPoint) {
-        return new Point(userPoint.id(), userPoint.point(), userPoint.updateMillis());
+    public static Point toPoint(UserPoint userPoint, PointPolicy pointPolicy) {
+        return new Point(userPoint.id(), userPoint.point(), userPoint.updateMillis(), pointPolicy);
     }
 
     public UserPoint toUserPoint() {

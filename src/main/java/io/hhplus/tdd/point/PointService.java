@@ -2,6 +2,7 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.point.policy.PointPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +13,7 @@ import java.util.List;
 public class PointService {
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
+    private final PointPolicy pointPolicy;
 
     public UserPoint getPoint(long id) {
         return userPointTable.selectById(id);
@@ -19,7 +21,7 @@ public class PointService {
 
     public UserPoint charge(long id, long amount) {
         UserPoint userPoint = userPointTable.selectById(id);
-        Point point = Point.toPoint(userPoint);
+        Point point = Point.toPoint(userPoint, pointPolicy);
 
         point.charge(amount);
 
@@ -31,7 +33,7 @@ public class PointService {
 
     public UserPoint use(long id, long amount) {
         UserPoint userPoint = userPointTable.selectById(id);
-        Point point = Point.toPoint(userPoint);
+        Point point = Point.toPoint(userPoint, pointPolicy);
 
         point.use(amount);
 

@@ -1,5 +1,8 @@
 package io.hhplus.tdd.point.policy;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class DefaultPointPolicy implements PointPolicy{
 
     @Override
